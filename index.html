@@ -293,9 +293,43 @@
       border-top:1px solid var(--line);
     }
     .kpi-field{
-      max-width:260px;
       margin:16px 0 20px;
     }
+    .kpi-field-label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:500;
+      margin-bottom:8px;
+    }
+    .kpi-options{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .kpi-option{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+      min-width:92px;
+      background:var(--surface-alt);
+      border:1.5px solid var(--line);
+      border-radius:10px;
+      padding:10px 16px;
+      font-family:var(--font-body);
+      cursor:pointer;
+      transition:all .15s ease;
+    }
+    .kpi-option:hover{ border-color:var(--emerald); }
+    .kpi-option-name{ font-size:13px; font-weight:600; color:var(--ink); }
+    .kpi-option-amt{ font-size:12.5px; color:var(--muted); }
+    .kpi-option.active{
+      background:var(--emerald-dim);
+      border-color:var(--emerald);
+    }
+    .kpi-option.active .kpi-option-name,
+    .kpi-option.active .kpi-option-amt{ color:var(--emerald); }
     .salary-panel .stats-grid{ margin-bottom:0; }
 
     .pill{
@@ -596,7 +630,9 @@
       .salary-panel-title{ font-size:13.5px; }
       .salary-preview{ font-size:13.5px; }
       .salary-panel-body{ padding:4px 16px 16px; }
-      .kpi-field{ max-width:none; }
+      .kpi-field{ margin:14px 0 16px; }
+      .kpi-options{ gap:8px; }
+      .kpi-option{ min-width:76px; padding:8px 12px; flex:1 1 auto; }
       
       .table-shell { border-radius: 8px; }
       .agent-list { grid-template-columns: 1fr; }
@@ -746,14 +782,26 @@
       </button>
 
       <div class="salary-panel-body" id="salaryPanelBody" style="display:none;">
-        <div class="field kpi-field">
-          <label for="kpiSelect">KPI Category</label>
-          <select id="kpiSelect">
-            <option value="">None</option>
-            <option value="A">A — ৳2700</option>
-            <option value="B">B — ৳2000</option>
-            <option value="C">C — ৳700</option>
-          </select>
+        <div class="kpi-field">
+          <label class="kpi-field-label">KPI Category</label>
+          <div class="kpi-options" id="kpiOptions">
+            <button type="button" class="kpi-option active" data-kpi="">
+              <span class="kpi-option-name">None</span>
+              <span class="kpi-option-amt">—</span>
+            </button>
+            <button type="button" class="kpi-option" data-kpi="A">
+              <span class="kpi-option-name">A</span>
+              <span class="kpi-option-amt">৳2,700</span>
+            </button>
+            <button type="button" class="kpi-option" data-kpi="B">
+              <span class="kpi-option-name">B</span>
+              <span class="kpi-option-amt">৳2,000</span>
+            </button>
+            <button type="button" class="kpi-option" data-kpi="C">
+              <span class="kpi-option-name">C</span>
+              <span class="kpi-option-amt">৳700</span>
+            </button>
+          </div>
         </div>
 
         <div class="stats-grid" id="salaryGrid">
@@ -839,7 +887,7 @@
   const CONFIG = {
     SHEET_ID: "1qIhXOv2jU2pQagJbzkYms1vAQ9JPtAhwSNmibGfFZS4",
     SHEET_NAME: "Schedule",
-    REFRESH_MS: 900000 // 5 minutes
+    REFRESH_MS: 300000 // 5 minutes
   };
 
   const csvUrl = () =>
@@ -941,6 +989,7 @@
   let ALL_ROWS = [];
   let SELECTED_SORT_KEY = getSortKeyFromDate(new Date()); // Defaults to today
   let salaryVisible = false;
+  let selectedKpiCategory = '';
 
   /* ========== VIEW SWITCHER ========== */
   document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1204,7 +1253,7 @@
     const salaryPanel = document.getElementById('salaryPanel');
     const panelBody = document.getElementById('salaryPanelBody');
     const toggleBtn = document.getElementById('toggleSalaryBtn');
-    const kpiCategory = document.getElementById('kpiSelect').value;
+    const kpiCategory = selectedKpiCategory;
 
     let dutyDaysWorked = 0;
     let travelTotal = 0;
@@ -1463,7 +1512,15 @@
   document.getElementById('agentSelect').addEventListener('change', renderHistory);
   document.getElementById('startDate').addEventListener('change', renderHistory);
   document.getElementById('endDate').addEventListener('change', renderHistory);
-  document.getElementById('kpiSelect').addEventListener('change', renderHistory);
+  document.querySelectorAll('#kpiOptions .kpi-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedKpiCategory = btn.dataset.kpi;
+      document.querySelectorAll('#kpiOptions .kpi-option').forEach(b => {
+        b.classList.toggle('active', b.dataset.kpi === selectedKpiCategory);
+      });
+      renderHistory();
+    });
+  });
   document.getElementById('toggleSalaryBtn').addEventListener('click', () => {
     salaryVisible = !salaryVisible;
     renderHistory();
@@ -1479,7 +1536,10 @@
   });
   document.getElementById('resetBtn').addEventListener('click', () => {
     document.getElementById('agentSelect').value = '';
-    document.getElementById('kpiSelect').value = '';
+    selectedKpiCategory = '';
+    document.querySelectorAll('#kpiOptions .kpi-option').forEach(b => {
+      b.classList.toggle('active', b.dataset.kpi === '');
+    });
     salaryVisible = false;
     setDefaultDates();
     renderHistory();
