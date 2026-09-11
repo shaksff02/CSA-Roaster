@@ -944,6 +944,17 @@
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
+  // Normalizes an agent name so that spelling variants (dots, extra spaces,
+  // inconsistent case - e.g. "Md. Sajib Uddin" vs "Md Sajib Uddin" vs
+  // "sajib uddin") are all treated as the SAME agent.
+  function normalizeAgentName(name){
+    return (name || '')
+      .toLowerCase()
+      .replace(/\./g, '')      // remove periods ("Md." -> "Md")
+      .replace(/\s+/g, ' ')    // collapse multiple spaces
+      .trim();
+  }
+
   function regionPillClass(region){
     const r = (region||'').trim().toUpperCase();
     if(r === 'EU') return 'eu';
@@ -971,6 +982,7 @@
 
     return rows.slice(1).map(r => {
       const dateInfo = normalizeDate(r[idx.date] || '');
+      const agentNameRaw = (r[idx.agentName] || '').trim();
       return {
         sortKey: dateInfo.sortKey,
         display: dateInfo.display,
@@ -978,7 +990,8 @@
         month: dateInfo.month,
         shift: (r[idx.shift] || '').trim(),
         systemId: (r[idx.systemId] || '').trim(),
-        agentName: (r[idx.agentName] || '').trim(),
+        agentName: agentNameRaw,
+        agentKey: normalizeAgentName(agentNameRaw),
         region: (r[idx.region] || '').trim(),
       };
     }).filter(r => r.agentName || r.systemId);
@@ -1296,10 +1309,24 @@
 
   /* ========== AGENT HISTORY VIEW RENDER ========== */
   function populateAgents(){
-    const agentNames = [...new Set(ALL_ROWS.map(r => r.agentName))].filter(Boolean).sort();
+    // Group rows by normalized key so spelling variants collapse into one
+    // agent. For the label shown in the dropdown, pick whichever raw
+    // spelling occurs most often for that key.
+    const keyToNameCounts = {};
+    ALL_ROWS.forEach(r => {
+      if(!r.agentKey) return;
+      keyToNameCounts[r.agentKey] = keyToNameCounts[r.agentKey] || {};
+      keyToNameCounts[r.agentKey][r.agentName] = (keyToNameCounts[r.agentKey][r.agentName] || 0) + 1;
+    });
+    const agentEntries = Object.keys(keyToNameCounts).map(key => {
+      const counts = keyToNameCounts[key];
+      const bestName = Object.keys(counts).sort((a,b) => counts[b]-counts[a])[0];
+      return { key, name: bestName };
+    }).sort((a,b) => a.name.localeCompare(b.name));
+
     const select = document.getElementById('agentSelect');
     select.innerHTML = '<option value="">-- Select Agent --</option>' + 
-      agentNames.map(name => `<option value="${name}">${name}</option>`).join('');
+      agentEntries.map(e => `<option value="${e.key}">${e.name}</option>`).join('');
   }
 
   function setDefaultDates(){
@@ -1340,7 +1367,7 @@
     }
 
     let filtered = ALL_ROWS.filter(r => {
-      if(r.agentName !== agent) return false;
+      if(r.agentKey !== agent) return false;
       if(startDateStr && r.sortKey < startDateStr) return false;
       if(endDateStr && r.sortKey > endDateStr) return false;
       return true;
