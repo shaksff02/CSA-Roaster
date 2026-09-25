@@ -1893,18 +1893,16 @@
   }
 
   // Default range: 15th of previous month (or current month if today >= 16th) → today
-  function defaultRangeStrings(){
-    const today = new Date();
-    let startYear = today.getFullYear();
-    let startMonth = today.getMonth();
-    if(today.getDate() < 16){
-      startMonth -= 1;
-      if(startMonth < 0){ startMonth = 11; startYear -= 1; }
-    }
-    const s = `${startYear}-${String(startMonth+1).padStart(2,'0')}-15`;
-    const e = getSortKeyFromDate(today);
-    return { s, e };
-  }
+// Default range: 16th of current month → today
+function defaultRangeStrings(){
+  const today = new Date();
+  const startYear = today.getFullYear();
+  const startMonth = today.getMonth();
+
+  const s = `${startYear}-${String(startMonth + 1).padStart(2, '0')}-16`;
+  const e = getSortKeyFromDate(today);
+  return { s, e };
+}
 
   function renderHistory(){
     const agent = document.getElementById('agentSelect').value;
