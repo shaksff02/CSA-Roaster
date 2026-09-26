@@ -628,6 +628,11 @@
       font-family:var(--font-mono);font-size:9px;font-weight:500;background:var(--gold-dim);
       color:var(--gold);border:1px solid rgba(141,106,38,.3);vertical-align:middle;letter-spacing:.08em;
     }
+    .swap-tag{
+      display:inline-block;margin-left:6px;padding:3px 9px;border-radius:999px;
+      font-family:var(--font-mono);font-size:9px;font-weight:500;background:var(--info-dim);
+      color:var(--info);border:1px solid rgba(74,96,118,.3);vertical-align:middle;letter-spacing:.08em;
+    }
 
     .ot-hero{
       display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:30px;
@@ -2192,10 +2197,16 @@ function defaultRangeStrings(){
         .filter(o => o.agentKey === agent && o.sortKey === r.sortKey)
         .reduce((s,o) => s + o.hours, 0);
       const otTag = otHrs > 0 ? ` <span class="ot-tag">OT ${fmtHrs(otHrs)}h</span>` : '';
+      const wasSwapped = SWAP_ROWS.some(s =>
+        s.sortKey === r.sortKey &&
+        /approved/i.test(s.status) &&
+        (s.requesterKey === agent || s.partnerKey === agent)
+      );
+      const swapTag = wasSwapped ? ` <span class="swap-tag">Swapped</span>` : '';
       return `<tr class="${isOff ? 'off-row' : ''}">
         <td>${esc(r.display)}</td>
         <td style="color:var(--muted); font-weight:500;">${esc(r.dayName)}</td>
-        <td><span class="pill ${pillClass}">${esc(r.shift)}</span>${otTag}</td>
+        <td><span class="pill ${pillClass}">${esc(r.shift)}</span>${otTag}${swapTag}</td>
         <td>${esc(r.region || '-')}</td>
         <td style="color:var(--muted);">${esc(r.systemId || '-')}</td>
       </tr>`;
