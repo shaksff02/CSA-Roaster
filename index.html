@@ -1608,11 +1608,21 @@
               const showId = r.systemId && r.systemId !== displayName && r.systemId.trim().toUpperCase() !== 'N/A';
               const initials = displayName.trim().split(/\s+/).slice(0,2).map(w => w[0]).join('').toUpperCase();
               const regionCls = regionPillClass(r.region);
+              const swapMatch = SWAP_ROWS.find(s =>
+                s.sortKey === r.sortKey &&
+                /approved/i.test(s.status) &&
+                (s.requesterKey === r.agentKey || s.partnerKey === r.agentKey)
+              );
+              let swapTag = '';
+              if (swapMatch) {
+                const partnerName = swapMatch.requesterKey === r.agentKey ? swapMatch.partnerName : swapMatch.requesterName;
+                swapTag = `<span class="swap-tag">Swapped w/ ${esc(partnerName || '?')}</span>`;
+              }
               return `
               <div class="agent-row">
                 <span class="avatar ${regionCls}">${esc(initials)}</span>
                 <span class="agent-info">
-                  <span class="name">${esc(displayName)}</span>
+                  <span class="name">${esc(displayName)}${swapTag}</span>
                   ${showId ? `<span class="sysid">ID: ${esc(r.systemId)}</span>` : ''}
                 </span>
                 <span class="pill ${regionCls}">${esc(r.region)}</span>
@@ -2197,12 +2207,16 @@ function defaultRangeStrings(){
         .filter(o => o.agentKey === agent && o.sortKey === r.sortKey)
         .reduce((s,o) => s + o.hours, 0);
       const otTag = otHrs > 0 ? ` <span class="ot-tag">OT ${fmtHrs(otHrs)}h</span>` : '';
-      const wasSwapped = SWAP_ROWS.some(s =>
+      const swapMatch = SWAP_ROWS.find(s =>
         s.sortKey === r.sortKey &&
         /approved/i.test(s.status) &&
         (s.requesterKey === agent || s.partnerKey === agent)
       );
-      const swapTag = wasSwapped ? ` <span class="swap-tag">Swapped</span>` : '';
+      let swapTag = '';
+      if (swapMatch) {
+        const partnerName = swapMatch.requesterKey === agent ? swapMatch.partnerName : swapMatch.requesterName;
+        swapTag = ` <span class="swap-tag">Swapped w/ ${esc(partnerName || '?')}</span>`;
+      }
       return `<tr class="${isOff ? 'off-row' : ''}">
         <td>${esc(r.display)}</td>
         <td style="color:var(--muted); font-weight:500;">${esc(r.dayName)}</td>
