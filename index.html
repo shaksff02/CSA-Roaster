@@ -1616,7 +1616,7 @@
               let swapTag = '';
               if (swapMatch) {
                 const partnerName = swapMatch.requesterKey === r.agentKey ? swapMatch.partnerName : swapMatch.requesterName;
-                swapTag = `<span class="swap-tag">Swapped w/ ${esc(partnerName || '?')}</span>`;
+                swapTag = `<span class="swap-tag">Swapped with ${esc(partnerName || '?')}</span>`;
               }
               return `
               <div class="agent-row">
@@ -2215,7 +2215,7 @@ function defaultRangeStrings(){
       let swapTag = '';
       if (swapMatch) {
         const partnerName = swapMatch.requesterKey === agent ? swapMatch.partnerName : swapMatch.requesterName;
-        swapTag = ` <span class="swap-tag">Swapped w/ ${esc(partnerName || '?')}</span>`;
+        swapTag = ` <span class="swap-tag">Swapped with ${esc(partnerName || '?')}</span>`;
       }
       return `<tr class="${isOff ? 'off-row' : ''}">
         <td>${esc(r.display)}</td>
