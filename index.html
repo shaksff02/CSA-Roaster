@@ -255,6 +255,45 @@
     .pill.other{background:var(--info-dim);color:var(--info);border-color:rgba(74,96,118,.22);}
     .pill.off{background:var(--raised);color:var(--muted);border-color:rgba(33,29,21,.12);}
 
+
+    /* ===== REGION CARDS (Today view) ===== */
+    .region-card{
+      border:1px solid var(--line);border-radius:16px;background:var(--surface);
+      margin-bottom:26px;overflow:hidden;scroll-margin-top:16px;
+    }
+    .region-head{
+      width:100%;display:flex;align-items:center;gap:16px;text-align:left;cursor:pointer;
+      padding:20px 24px;border:none;background:var(--surface-alt);color:var(--ink);
+      border-bottom:1px solid var(--line);border-left:5px solid var(--faint);
+      font-family:var(--font-body);
+    }
+    .region-head:hover{background:var(--raised);}
+    .region-card.eu .region-head{border-left-color:var(--emerald);background:var(--emerald-dim);}
+    .region-card.glo .region-head{border-left-color:var(--gold);background:var(--gold-dim);}
+    .region-card.udp .region-head{border-left-color:var(--plum);background:var(--plum-dim);}
+    .region-card.eu .rg-name{color:var(--emerald);}
+    .region-card.glo .rg-name{color:var(--gold);}
+    .region-card.udp .rg-name{color:var(--plum);}
+    .rg-name{font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:.02em;}
+    .rg-meta{
+      margin-left:auto;font-family:var(--font-mono);font-size:10.5px;color:var(--muted);
+      letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+    }
+    .rg-meta b{font-size:15px;color:var(--ink);letter-spacing:0;margin-right:2px;}
+    .rg-chev{font-size:16px;color:var(--muted);transition:transform .25s var(--ease);}
+    .region-card.collapsed .rg-chev{transform:rotate(-90deg);}
+    .region-card.collapsed .region-head{border-bottom-color:transparent;}
+    .region-card.collapsed .region-body{display:none;}
+    .region-body{padding:18px 18px 0;}
+    .region-body .shift-group{margin-bottom:18px;}
+    .region-empty{padding:6px 6px 24px;color:var(--muted);font-size:13px;}
+    .stat-chip[data-region]{cursor:pointer;}
+    @media(max-width:600px){
+      .region-head{padding:16px 16px;gap:10px;flex-wrap:wrap;}
+      .rg-name{font-size:23px;}
+      .region-body{padding:12px 10px 0;}
+    }
+
     /* ===== FILTERS ===== */
     .filters{
       display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px;align-items:flex-end;
@@ -1559,11 +1598,90 @@
 
     const row = document.getElementById('statRow');
     row.innerHTML = `
-      <div class="stat-chip eu"><span class="n">${counts.eu}</span><span class="l">On duty in EU</span></div>
-      <div class="stat-chip glo"><span class="n">${counts.glo}</span><span class="l">On duty in GLO</span></div>
-      <div class="stat-chip udp"><span class="n">${counts.udp}</span><span class="l">On duty in UDP</span></div>
+      <div class="stat-chip eu" data-region="eu"><span class="n">${counts.eu}</span><span class="l">On duty in EU</span></div>
+      <div class="stat-chip glo" data-region="glo"><span class="n">${counts.glo}</span><span class="l">On duty in GLOBAL</span></div>
+      <div class="stat-chip udp" data-region="udp"><span class="n">${counts.udp}</span><span class="l">On duty in UDP</span></div>
     `;
     animateNums(row);
+  }
+
+  /* ----- region cards: UDP · GLOBAL · EU (+ Other/Off if any) ----- */
+  const REGION_CARDS = [
+    {cls:'udp', label:'UDP'},
+    {cls:'glo', label:'GLOBAL'},
+    {cls:'eu',  label:'EU'}
+  ];
+  const REGION_COLLAPSED = {}; // remembers open/closed state across date changes
+
+  function agentRowHtml(r){
+    const hasName = r.agentName && r.agentName.trim().toUpperCase() !== 'N/A';
+    const displayName = hasName ? r.agentName : r.systemId;
+    const showId = r.systemId && r.systemId !== displayName && r.systemId.trim().toUpperCase() !== 'N/A';
+    const initials = displayName.trim().split(/\s+/).slice(0,2).map(w => w[0]).join('').toUpperCase();
+    const regionCls = regionPillClass(r.region);
+    const swapMatch = SWAP_ROWS.find(s =>
+      s.sortKey === r.sortKey &&
+      /approved/i.test(s.status) &&
+      (s.requesterKey === r.agentKey || s.partnerKey === r.agentKey)
+    );
+    let swapTag = '';
+    if (swapMatch) {
+      const partnerName = swapMatch.requesterKey === r.agentKey ? swapMatch.partnerName : swapMatch.requesterName;
+      swapTag = `<span class="swap-tag">Swapped with ${esc(partnerName || '?')}</span>`;
+    }
+    return `
+      <div class="agent-row">
+        <span class="avatar ${regionCls}">${esc(initials)}</span>
+        <span class="agent-info">
+          <span class="name">${esc(displayName)}${swapTag}</span>
+          ${showId ? `<span class="sysid">ID: ${esc(r.systemId)}</span>` : ''}
+        </span>
+        <span class="pill ${regionCls}">${esc(r.region)}</span>
+      </div>`;
+  }
+
+  function shiftGroupsHtml(rowsIn){
+    const groups = {};
+    rowsIn.forEach(r => {
+      const key = r.shift.trim() || '(Shift not filled)';
+      if(!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    });
+    const keys = Object.keys(groups).sort((a,b) => {
+      const aOff = /^off$/i.test(a), bOff = /^off$/i.test(b);
+      if(aOff && !bOff) return 1;
+      if(bOff && !aOff) return -1;
+      return a.localeCompare(b);
+    });
+    return keys.map(key => {
+      const isOff = /^off$/i.test(key);
+      const rows = groups[key].sort((a,b) => a.agentName.localeCompare(b.agentName));
+      return `
+        <div class="shift-group ${isOff ? 'off-group' : ''}">
+          <div class="shift-group-header">
+            <span class="name">${esc(key)}</span>
+            <span class="count">${rows.length} agents</span>
+          </div>
+          <div class="agent-list">${rows.map(agentRowHtml).join('')}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function regionCardHtml(cls, label, rows){
+    const onDuty = rows.filter(r => !isOffShift(r.shift)).length;
+    const off = rows.length - onDuty;
+    const collapsed = REGION_COLLAPSED[cls] ? 'collapsed' : '';
+    return `
+      <section class="region-card ${cls} ${collapsed}" id="region-${cls}" data-region="${cls}">
+        <button type="button" class="region-head" aria-expanded="${!collapsed}">
+          <span class="rg-name">${esc(label)}</span>
+          <span class="rg-meta"><b>${onDuty}</b> on duty${off ? ` · ${off} off` : ''}</span>
+          <span class="rg-chev">▾</span>
+        </button>
+        <div class="region-body">
+          ${rows.length ? shiftGroupsHtml(rows) : '<div class="region-empty">No agents in this region on this date.</div>'}
+        </div>
+      </section>`;
   }
 
   function renderGroups(targetRows){
@@ -1578,61 +1696,38 @@
     }
     stateMsg.style.display = 'none';
 
-    const groups = {};
+    const buckets = {udp:[], glo:[], eu:[], other:[]};
     targetRows.forEach(r => {
-      const key = r.shift.trim() || '(Shift not filled)';
-      if(!groups[key]) groups[key] = [];
-      groups[key].push(r);
+      const c = regionPillClass(r.region);
+      (buckets[c] || buckets.other).push(r);
     });
 
-    const keys = Object.keys(groups).sort((a,b) => {
-      const aOff = /^off$/i.test(a), bOff = /^off$/i.test(b);
-      if(aOff && !bOff) return 1;
-      if(bOff && !aOff) return -1;
-      return a.localeCompare(b);
-    });
-
-    holder.innerHTML = keys.map(key => {
-      const isOff = /^off$/i.test(key);
-      const rows = groups[key].sort((a,b) => a.agentName.localeCompare(b.agentName));
-      return `
-        <div class="shift-group ${isOff ? 'off-group' : ''}">
-          <div class="shift-group-header">
-            <span class="name">${esc(key)}</span>
-            <span class="count">${rows.length} agents</span>
-          </div>
-          <div class="agent-list">
-            ${rows.map(r => {
-              const hasName = r.agentName && r.agentName.trim().toUpperCase() !== 'N/A';
-              const displayName = hasName ? r.agentName : r.systemId;
-              const showId = r.systemId && r.systemId !== displayName && r.systemId.trim().toUpperCase() !== 'N/A';
-              const initials = displayName.trim().split(/\s+/).slice(0,2).map(w => w[0]).join('').toUpperCase();
-              const regionCls = regionPillClass(r.region);
-              const swapMatch = SWAP_ROWS.find(s =>
-                s.sortKey === r.sortKey &&
-                /approved/i.test(s.status) &&
-                (s.requesterKey === r.agentKey || s.partnerKey === r.agentKey)
-              );
-              let swapTag = '';
-              if (swapMatch) {
-                const partnerName = swapMatch.requesterKey === r.agentKey ? swapMatch.partnerName : swapMatch.requesterName;
-                swapTag = `<span class="swap-tag">Swapped with ${esc(partnerName || '?')}</span>`;
-              }
-              return `
-              <div class="agent-row">
-                <span class="avatar ${regionCls}">${esc(initials)}</span>
-                <span class="agent-info">
-                  <span class="name">${esc(displayName)}${swapTag}</span>
-                  ${showId ? `<span class="sysid">ID: ${esc(r.systemId)}</span>` : ''}
-                </span>
-                <span class="pill ${regionCls}">${esc(r.region)}</span>
-              </div>
-            `;}).join('')}
-          </div>
-        </div>
-      `;
-    }).join('');
+    let html = REGION_CARDS.map(rc => regionCardHtml(rc.cls, rc.label, buckets[rc.cls])).join('');
+    if(buckets.other.length) html += regionCardHtml('other', 'Other / Off', buckets.other);
+    holder.innerHTML = html;
   }
+
+  // collapse / expand a region card
+  document.getElementById('groupsHolder').addEventListener('click', e => {
+    const head = e.target.closest('.region-head');
+    if(!head) return;
+    const card = head.closest('.region-card');
+    const collapsed = card.classList.toggle('collapsed');
+    REGION_COLLAPSED[card.dataset.region] = collapsed;
+    head.setAttribute('aria-expanded', String(!collapsed));
+  });
+
+  // top stat chips jump to their region card (and open it)
+  document.getElementById('statRow').addEventListener('click', e => {
+    const chip = e.target.closest('.stat-chip[data-region]');
+    if(!chip) return;
+    const card = document.getElementById('region-' + chip.dataset.region);
+    if(!card) return;
+    card.classList.remove('collapsed');
+    REGION_COLLAPSED[chip.dataset.region] = false;
+    card.querySelector('.region-head').setAttribute('aria-expanded','true');
+    card.scrollIntoView({behavior:'smooth', block:'start'});
+  });
 
   function renderTodayView() {
     renderHeroDate();
