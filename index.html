@@ -290,9 +290,10 @@
     .cal-legend i.glo{background:var(--gold);}
     .cal-legend i.udp{background:var(--plum);}
     .cal-legend i.other{background:var(--faint);}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;}
+    .cal-mini{display:none;}
     .cal-dow{text-align:center;font-family:var(--font-mono);font-size:9.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;padding:4px 0;}
-    .cal-cell{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-height:112px;padding:8px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s ease;}
+    .cal-cell{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-height:112px;padding:8px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s ease;}
     .cal-cell[data-key]{cursor:pointer;}
     .cal-cell[data-key]:hover{border-color:var(--line-strong);}
     .cal-cell.other-month{opacity:.4;background:transparent;border-style:dashed;}
@@ -453,9 +454,24 @@
       .pagination-controls{justify-content:center;}
       .holiday-modal{max-width:100%;padding:14px;}
       .holiday-cal-day{min-height:30px;font-size:12px;}
+      .cal-header{gap:10px;}
+      .cal-title{font-size:22px;}
+      .cal-nav{width:100%;}
+      .cal-nav button{flex:1;padding:9px 6px;font-size:10.5px;letter-spacing:.04em;}
+      .cal-legend{gap:12px;font-size:9px;}
       .cal-grid{gap:4px;}
-      .cal-cell{min-height:84px;padding:5px;border-radius:8px;}
-      .cal-agent .nm{font-size:9.5px;}
+      .cal-dow{font-size:8.5px;letter-spacing:.04em;}
+      .cal-cell{min-height:66px;padding:6px 3px 5px;border-radius:8px;align-items:center;gap:2px;}
+      .cal-day-num{font-size:12px;}
+      .cal-agents{display:none;}
+      .cal-mini{display:flex;flex-direction:column;align-items:center;gap:4px;}
+      .cal-count{font-family:var(--font-display);font-size:19px;font-weight:600;color:var(--ink);line-height:1;}
+      .cal-dots{display:flex;gap:3px;justify-content:center;}
+      .cal-dots i{width:6px;height:6px;border-radius:50%;display:block;}
+      .cal-dots i.eu{background:var(--emerald);}
+      .cal-dots i.glo{background:var(--gold);}
+      .cal-dots i.udp{background:var(--plum);}
+      .cal-dots i.other{background:var(--faint);}
       /* Agent History table: phone-এ শুধু Date · Day · Shift */
       #historyTable{min-width:0;}
       #historyTable th:nth-child(n+4),#historyTable td:nth-child(n+4){display:none;}
@@ -1991,16 +2007,22 @@
       if(key === SELECTED_SORT_KEY) cls.push('is-sel');
 
       let inner = '';
+      let mini = '';
       if(inMonth){
         inner = onDuty.slice(0, MAX_SHOW).map(r =>
           `<span class="cal-agent"><i class="${regionPillClass(r.region)}"></i><span class="nm">${esc(r.agentName && r.agentName.trim().toUpperCase() !== 'N/A' ? r.agentName : r.systemId)}</span></span>`
         ).join('');
         if(onDuty.length > MAX_SHOW) inner += `<span class="cal-more">+${onDuty.length - MAX_SHOW} more</span>`;
         if(offN > 0) inner += `<span class="cal-offn">${offN} off</span>`;
+        if(onDuty.length){
+          const present = ['udp','glo','eu','other'].filter(c => onDuty.some(r => regionPillClass(r.region) === c || (c === 'other' && !['udp','glo','eu'].includes(regionPillClass(r.region)))));
+          mini = `<div class="cal-mini"><span class="cal-count">${onDuty.length}</span><span class="cal-dots">${present.map(c => `<i class="${c}"></i>`).join('')}</span></div>`;
+        }
       }
       html += `<div class="${cls.join(' ')}" data-key="${key}">
         <span class="cal-day-num">${d.getDate()}</span>
         <div class="cal-agents">${inner}</div>
+        ${mini}
       </div>`;
     }
     grid.innerHTML = html;
