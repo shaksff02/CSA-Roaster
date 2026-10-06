@@ -47,13 +47,34 @@
     header.top .updated{font-family:var(--font-mono);font-size:10px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;}
 
     /* NAVIGATION */
-    .view-nav{display:flex;gap:8px;margin:28px 0 26px;padding:7px;background:var(--paper);border-radius:16px;overflow-x:auto;scrollbar-width:none;box-shadow:inset 2px 2px 6px rgba(163,154,133,.22),inset -2px -2px 6px rgba(255,255,255,.9);}
+    .nav-wrap{position:relative;margin:28px 0 26px;}
+    .view-nav{display:flex;gap:8px;margin:0;padding:7px;background:var(--paper);border-radius:16px;overflow-x:auto;scrollbar-width:none;box-shadow:inset 2px 2px 6px rgba(163,154,133,.22),inset -2px -2px 6px rgba(255,255,255,.9);}
     .view-nav::-webkit-scrollbar{display:none;}
     .nav-btn{position:relative;background:transparent;border:none;padding:12px 18px;border-radius:11px;font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;flex:0 0 auto;display:inline-flex;align-items:center;gap:9px;transition:color .18s ease,box-shadow .25s var(--ease),background-color .2s ease;}
     .nav-btn::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--emerald);opacity:0;transform:scale(0);transition:opacity .2s ease,transform .25s var(--ease);}
     .nav-btn:hover{color:var(--ink);box-shadow:2px 2px 6px rgba(163,154,133,.22),-2px -2px 6px rgba(255,255,255,.8);}
     .nav-btn.active{color:var(--ink);background:var(--surface);box-shadow:4px 4px 10px rgba(163,154,133,.38),-4px -4px 10px rgba(255,255,255,.95);}
     .nav-btn.active::after{opacity:1;transform:scale(1);}
+
+
+    /* scroll hint arrows for the tab tray */
+    .nav-arrow{
+      position:absolute;top:0;bottom:0;width:46px;display:none;align-items:center;
+      border:none;padding:0 7px;cursor:pointer;z-index:3;
+    }
+    .nav-arrow.right{right:0;justify-content:flex-end;border-radius:0 16px 16px 0;background:linear-gradient(to right,rgba(243,240,233,0),var(--paper) 60%);}
+    .nav-arrow.left{left:0;justify-content:flex-start;border-radius:16px 0 0 16px;background:linear-gradient(to left,rgba(243,240,233,0),var(--paper) 60%);}
+    .nav-arrow span{
+      width:26px;height:26px;border-radius:50%;background:var(--surface);color:var(--ink);
+      display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;
+      box-shadow:0 2px 8px rgba(33,29,21,.22);
+    }
+    .nav-wrap.can-right .nav-arrow.right{display:flex;}
+    .nav-wrap.can-left .nav-arrow.left{display:flex;}
+    @media (prefers-reduced-motion:no-preference){
+      .nav-arrow.right span{animation:nudge 1.6s ease-in-out infinite;}
+    }
+    @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
 
     /* DATE STRIP */
     .date-nav{display:flex;gap:8px;margin-bottom:30px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;scrollbar-width:none;padding:2px 2px 12px;}
@@ -507,7 +528,9 @@
     </div>
   </header>
 
-  <nav class="view-nav">
+  <div class="nav-wrap" id="navWrap">
+  <button type="button" class="nav-arrow left" id="navLeft" aria-label="Scroll tabs left"><span>‹</span></button>
+  <nav class="view-nav" id="viewNav">
     <button class="nav-btn active" data-view="todayView">Today's Schedule</button>
     <button class="nav-btn" data-view="detailsView">All Entries</button>
     <button class="nav-btn" data-view="agentView">Agent History</button>
@@ -516,6 +539,8 @@
     <button class="nav-btn" data-view="otView">OT</button>
     <button class="nav-btn" data-view="adminView">Admin</button>
   </nav>
+  <button type="button" class="nav-arrow right" id="navRight" aria-label="Scroll tabs right"><span>›</span></button>
+  </div>
 
   <!-- TODAY VIEW -->
   <div id="todayView">
@@ -2758,6 +2783,26 @@
     setDefaultDates();
     renderHistory();
   });
+
+  /* ===== Tab tray scroll arrows ===== */
+  (function(){
+    const wrap = document.getElementById('navWrap');
+    const nav = document.getElementById('viewNav');
+    function update(){
+      const max = nav.scrollWidth - nav.clientWidth;
+      wrap.classList.toggle('can-right', nav.scrollLeft < max - 4);
+      wrap.classList.toggle('can-left', nav.scrollLeft > 4);
+    }
+    nav.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('resize', update);
+    document.getElementById('navRight').addEventListener('click', () => nav.scrollBy({left: 160, behavior:'smooth'}));
+    document.getElementById('navLeft').addEventListener('click', () => nav.scrollBy({left: -160, behavior:'smooth'}));
+    nav.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => {
+      b.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+    }));
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(update);
+    update();
+  })();
 
   /* ===== Live masthead clock ===== */
   function tickClock(){
