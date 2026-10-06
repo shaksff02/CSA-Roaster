@@ -157,14 +157,27 @@
     .page-btn:disabled{opacity:.35;cursor:not-allowed;}
 
     /* QUICK RANGE CHIPS */
-    .quick-range{flex:1 1 100%;display:flex;flex-direction:column;gap:8px;}
+    .quick-range{flex:1 1 100%;display:flex;flex-direction:column;gap:10px;}
     .quick-range-label{font-family:var(--font-mono);font-size:9.5px;color:var(--muted);font-weight:500;letter-spacing:.18em;text-transform:uppercase;}
-    .quick-chips{display:flex;flex-wrap:wrap;gap:8px;}
-    .qr-chip{background:var(--surface);border:1px solid var(--line-strong);color:var(--ink);border-radius:999px;padding:9px 16px;font-size:11.5px;font-weight:700;font-family:var(--font-body);cursor:pointer;letter-spacing:.06em;transition:all .18s ease;}
-    .qr-chip small{display:block;font-family:var(--font-mono);font-size:9px;font-weight:500;color:var(--faint);letter-spacing:.04em;margin-top:2px;}
-    .qr-chip:hover{border-color:var(--ink);}
-    .qr-chip.active{background:#0b7a5f;border-color:#0b7a5f;color:#fff;}
-    .qr-chip.active small{color:rgba(255,255,255,.75);}
+    .quick-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+    .qr-chip{
+      position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+      text-align:left;padding:13px 16px 12px 20px;border-radius:12px;overflow:hidden;
+      background:var(--surface-alt);border:1px solid var(--line);color:var(--ink);
+      font-family:var(--font-body);font-size:13px;font-weight:700;letter-spacing:.01em;cursor:pointer;
+      transition:transform .2s var(--ease),box-shadow .2s ease,border-color .18s ease,background-color .18s ease;
+    }
+    .qr-chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line-strong);transition:background-color .18s ease;}
+    .qr-chip small{display:block;font-family:var(--font-mono);font-size:10.5px;font-weight:500;color:var(--muted);letter-spacing:.02em;}
+    .qr-chip:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:0 10px 20px -14px rgba(33,29,21,.45);}
+    .qr-chip:hover::before{background:var(--ink);}
+    .qr-chip.active{background:#0b7a5f;border-color:#0b7a5f;color:#fff;box-shadow:0 10px 22px -12px rgba(11,122,95,.7);}
+    .qr-chip.active::before{background:rgba(255,255,255,.55);}
+    .qr-chip.active small{color:rgba(255,255,255,.82);}
+    .qr-chip.active::after{
+      content:"✓";position:absolute;top:10px;right:12px;width:18px;height:18px;border-radius:50%;
+      background:rgba(255,255,255,.2);color:#fff;font-size:10px;line-height:18px;text-align:center;font-weight:700;
+    }
 
     /* SALARY PANEL */
     .salary-panel{border:1px solid var(--line);border-radius:14px;background:var(--surface);margin-bottom:24px;overflow:hidden;}
@@ -420,7 +433,9 @@
       .filters{display:grid;grid-template-columns:1fr;gap:14px;padding:16px;}
       .field{width:100%;min-width:100%;}
       .clear-btn,.reset-btn{width:100%;text-align:center;}
-      .qr-chip{flex:1 1 calc(50% - 4px);text-align:center;padding:9px 10px;}
+      .quick-chips{grid-template-columns:repeat(2,1fr);gap:8px;}
+      .qr-chip{padding:11px 12px 10px 16px;font-size:12px;}
+      .qr-chip small{font-size:9.5px;}
       .stat-chip .n{font-size:34px;}
       .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
       #salaryGrid{grid-template-columns:repeat(2,1fr);}
