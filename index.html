@@ -456,6 +456,11 @@
       .cal-grid{gap:4px;}
       .cal-cell{min-height:84px;padding:5px;border-radius:8px;}
       .cal-agent .nm{font-size:9.5px;}
+      /* Agent History table: phone-এ শুধু Date · Day · Shift */
+      #historyTable{min-width:0;}
+      #historyTable th:nth-child(n+4),#historyTable td:nth-child(n+4){display:none;}
+      #historyTable thead th,#historyTable tbody td{padding:12px 12px;}
+      #historyTable tbody td{white-space:normal;}
       #schedTableShell{border:none;box-shadow:none;background:transparent;overflow:visible;}
       #schedTable{min-width:0;}
       #schedTable thead{display:none;}
@@ -748,8 +753,6 @@
       </div>
       <button type="button" class="ot-add-btn" id="openOTModalBtn">Add OT Entry</button>
     </div>
-
-    <div class="stat-row" id="otStatRow"></div>
 
     <div class="filters">
       <div class="quick-range" data-target="ot">
@@ -2443,17 +2446,9 @@
     const msg = document.getElementById('otSummaryMsg');
     const shell = document.getElementById('otSummaryShell');
     const badge = document.getElementById('otSummaryBadge');
-    const statRow = document.getElementById('otStatRow');
 
     const totalHours = list.reduce((s,[,a]) => s + a.hours, 0);
     const totalAmount = Math.round(totalHours * CONFIG.OT_RATE);
-
-    statRow.innerHTML = `
-      <div class="stat-chip eu"><span class="n">${fmtHrs(Math.round(totalHours * 10) / 10)}</span><span class="l">Total OT Hours</span></div>
-      <div class="stat-chip glo"><span class="n">${fmtTk(totalAmount)}</span><span class="l">Total OT Payment</span></div>
-      <div class="stat-chip udp"><span class="n">${list.length}</span><span class="l">Agents with OT</span></div>
-    `;
-    animateNums(statRow);
 
     badge.textContent = `${rows.length} entries`;
 
