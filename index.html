@@ -2172,12 +2172,21 @@
     document.getElementById('endDate').value = r.e;
   }
 
-  // Default range: 15th of previous month (or current month if today >= 16th) → today
-// Default range: 16th of current month → today
+// Default range:
+//  - আজকের তারিখ ১৬ বা তার পরে হলে → এই মাসের ১৬ তারিখ → আজ
+//  - আজকের তারিখ ১৬-র আগে হলে → আগের মাসের ১৬ তারিখ → আজ
 function defaultRangeStrings(){
   const today = new Date();
-  const startYear = today.getFullYear();
-  const startMonth = today.getMonth();
+  let startYear = today.getFullYear();
+  let startMonth = today.getMonth();
+
+  if(today.getDate() < 16){
+    startMonth -= 1;
+    if(startMonth < 0){
+      startMonth = 11;
+      startYear -= 1;
+    }
+  }
 
   const s = `${startYear}-${String(startMonth + 1).padStart(2, '0')}-16`;
   const e = getSortKeyFromDate(today);
