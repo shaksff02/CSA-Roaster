@@ -33,6 +33,8 @@
     ::selection{background:var(--ink);color:var(--paper);}
     button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
     .wrap{max-width:1240px;margin:0 auto;padding:36px 28px 84px;}
+    /* Desktop: 100% browser zoom looks like 80% — less cramped */
+    @media (min-width:901px){ .wrap{zoom:.8;max-width:1400px;} }
 
     /* MASTHEAD */
     header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-bottom:18px;border-bottom:2px solid var(--ink);position:relative;}
@@ -863,6 +865,8 @@
     No login required — everyone can view this. Refresh the page after changes in the Sheet to see updated data.
   </footer>
 
+</div><!-- /.wrap -->
+
   <!-- OT SUBMIT MODAL -->
   <div class="ot-modal-overlay" id="otModalOverlay" style="display:none;">
     <div class="ot-modal">
@@ -942,8 +946,6 @@
       </div>
     </div>
   </div>
-</div>
-
 <script>
   /* ========== SMALL HELPERS ========== */
   function esc(s){
